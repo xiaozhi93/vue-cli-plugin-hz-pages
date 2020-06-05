@@ -27,7 +27,6 @@ module.exports = (api, options) => {
       '--public': `specify the public network URL for the HMR client`
     }
   }, async function serve (args) {
-    console.log(args)
     info('Starting development server...')
 
     // although this is primarily a dev server, it is possible that we
@@ -136,7 +135,6 @@ module.exports = (api, options) => {
       // inject dev/hot client
       addDevClientToEntry(webpackConfig, devClients)
     }
-      console.log(webpackConfig, 'webpackConfig')
     // create compiler
     const compiler = webpack(webpackConfig)
     // create server
