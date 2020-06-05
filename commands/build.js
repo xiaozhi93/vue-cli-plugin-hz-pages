@@ -39,7 +39,6 @@ module.exports = (api, options) => {
       '--watch': `watch for changes`
     }
   }, async (args) => {
-    console.log(args, 'args')
     for (const key in defaults) {
       if (args[key] == null) {
         args[key] = defaults[key]
@@ -94,9 +93,6 @@ function getModules(args) {
 }
 
 async function build (args, api, options) {
-  console.log('-----------')
-  console.log(options)
-  console.log('-----------')
   const fs = require('fs-extra')
   const path = require('path')
   const chalk = require('chalk')
@@ -131,7 +127,6 @@ async function build (args, api, options) {
   }
 
   const targetDir = api.resolve(args.dest || options.outputDir) + '/' + args.entry// 1
-  console.log(targetDir, '22222')
   const isLegacyBuild = args.target === 'app' && args.modern && !args.modernBuild
 
   // resolve raw webpack config

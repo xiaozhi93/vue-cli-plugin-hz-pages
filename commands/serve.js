@@ -13,7 +13,6 @@ const defaults = {
 
 module.exports = (api, options) => {
   const publicPath = options.publicPath
-  console.log(options, 'options')
   options.baseUrl = options.publicPath
   api.registerCommand('serve', {
     description: 'start development server',
@@ -154,8 +153,8 @@ module.exports = (api, options) => {
       hot: !isProduction,
       quiet: true,
       compress: isProduction,
-      // publicPath: options.baseUrl,
-      publicPath: '/' + entry + '/',
+      publicPath: options.baseUrl,
+      // publicPath: '/' + entry + '/',
       overlay: isProduction // TODO disable this
         ? false
         : { warnings: false, errors: true }

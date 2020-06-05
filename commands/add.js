@@ -6,7 +6,7 @@ const path = require('path')
 const resolve = require('resolve')
 const chalk = require('chalk')
 const copy = require('copy')
-const baseDir = resolve.sync('vue-cli-plugin-multi-page', { basedir: process.cwd() })
+const baseDir = resolve.sync('vue-cli-plugin-hz-pages', { basedir: process.cwd() })
 const source = path.resolve(path.dirname(baseDir), 'generator/template/m/**')
 const dist = 'src/modules/'
 
