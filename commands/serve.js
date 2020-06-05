@@ -12,8 +12,7 @@ const defaults = {
 }
 
 module.exports = (api, options) => {
-  const publicPath = options.publicPath
-  options.baseUrl = options.publicPath
+  const pagesConfig = options.pluginOptions.pages
   api.registerCommand('serve', {
     description: 'start development server',
     usage: 'vue-cli-service serve [options] [entry]',
@@ -26,7 +25,7 @@ module.exports = (api, options) => {
       '--https': `use https (default: ${defaults.https})`,
       '--public': `specify the public network URL for the HMR client`
     }
-  }, async function serve (args) {
+  }, async function serve(args) {
     info('Starting development server...')
 
     // although this is primarily a dev server, it is possible that we
@@ -44,10 +43,8 @@ module.exports = (api, options) => {
     const prepareProxy = require('../util/prepareProxy')
     const launchEditorMiddleware = require('launch-editor-middleware')
     const validateWebpackConfig = require('../util/validateWebpackConfig')
-
     // resolve webpack config
     const webpackConfig = api.resolveWebpackConfig() // 根据vue.config.js解析webpack配置
-
     // check for common config errors
     validateWebpackConfig(webpackConfig, api, options)
 
@@ -58,26 +55,21 @@ module.exports = (api, options) => {
       options.devServer
     )
 
-    // expose advanced stats
-    if (args.dashboard) {
-      const DashboardPlugin = require('../webpack/DashboardPlugin')
-      ;(webpackConfig.plugins = webpackConfig.plugins || []).push(new DashboardPlugin({
-        type: 'serve'
-      }))
-    }
     // 入口配置
     // entry arg
     const entry = args._[0]
     if (entry) {
       const modulePath = "./src/modules/" + entry // 1，增加模块路径
       webpackConfig.entry = {
-        // app: api.resolve(entry)
         app: modulePath + '/main.js' // 2，修改entry入口
       }
-      for(let item of webpackConfig.plugins) {
-        if (item.options && item.options.template) item.options.template= modulePath + '/index.html'  // 3，修改webpackConfig.plugins.HtmlWebpackPlugin template 入口
+      for (let item of webpackConfig.plugins) {
+        if (item.options && item.options.template) item.options.template = modulePath + '/index.html'  // 3，修改webpackConfig.plugins.HtmlWebpackPlugin template 入口
       }
     }
+    // publicPath 配置
+    const publicPath = pagesConfig[entry] ? pagesConfig[entry].publicPath : options.publicPath
+    webpackConfig.output.publicPath = publicPath
     // resolve server options
     const useHttps = args.https || projectDevServerOptions.https || defaults.https
     const protocol = useHttps ? 'https' : 'http'
@@ -95,7 +87,7 @@ module.exports = (api, options) => {
       protocol,
       host,
       port,
-      options.baseUrl
+      publicPath
     )
 
     const proxySettings = prepareProxy(
@@ -143,7 +135,7 @@ module.exports = (api, options) => {
       historyApiFallback: {
         disableDotRule: true,
         rewrites: [
-          { from: /./, to: path.posix.join(options.baseUrl, 'index.html') }
+          { from: /./, to: path.posix.join(publicPath, 'index.html') }
         ]
       },
       contentBase: api.resolve('public'),
@@ -151,15 +143,14 @@ module.exports = (api, options) => {
       hot: !isProduction,
       quiet: true,
       compress: isProduction,
-      publicPath: options.baseUrl,
-      // publicPath: '/' + entry + '/',
+      publicPath: publicPath,
       overlay: isProduction // TODO disable this
         ? false
         : { warnings: false, errors: true }
     }, projectDevServerOptions, {
       https: useHttps,
       proxy: proxySettings,
-      before (app, server) {
+      before(app, server) {
         // launch editor support.
         // this works with vue-devtools & @vue/cli-overlay
         app.use('/__open-in-editor', launchEditorMiddleware(() => console.log(
@@ -173,13 +164,13 @@ module.exports = (api, options) => {
       }
     }))
 
-    ;['SIGINT', 'SIGTERM'].forEach(signal => {
-      process.on(signal, () => {
-        server.close(() => {
-          process.exit(0)
+      ;['SIGINT', 'SIGTERM'].forEach(signal => {
+        process.on(signal, () => {
+          server.close(() => {
+            process.exit(0)
+          })
         })
       })
-    })
     // on appveyor, killing the process with SIGTERM causes execa to
     // throw error
     if (process.env.VUE_CLI_TEST) {
@@ -219,7 +210,7 @@ module.exports = (api, options) => {
         } else {
           console.log()
           console.log(chalk.yellow(`  It seems you are running Vue CLI inside a container.`))
-          if (!publicUrl && options.baseUrl && options.baseUrl !== '/') {
+          if (!publicUrl && publicPath && publicPath !== '/') {
             console.log()
             console.log(chalk.yellow(`  Since you are using a non-root baseUrl, the hot-reload socket`))
             console.log(chalk.yellow(`  will not be able to infer the correct URL to connect. You should`))
@@ -227,7 +218,7 @@ module.exports = (api, options) => {
             console.log()
           }
           console.log(chalk.yellow(`  Access the dev server via ${chalk.cyan(
-            `${protocol}://localhost:<your container's external mapped port>${options.baseUrl}`
+            `${protocol}://localhost:<your container's external mapped port>${publicPath}`
           )}`))
         }
         console.log()
@@ -281,7 +272,7 @@ module.exports = (api, options) => {
   })
 }
 
-function addDevClientToEntry (config, devClient) {
+function addDevClientToEntry(config, devClient) {
   const { entry } = config
   if (typeof entry === 'object' && !Array.isArray(entry)) {
     Object.keys(entry).forEach((key) => {
@@ -295,7 +286,7 @@ function addDevClientToEntry (config, devClient) {
 }
 
 // https://stackoverflow.com/a/20012536
-function checkInContainer () {
+function checkInContainer() {
   const fs = require('fs')
   if (fs.existsSync(`/proc/1/cgroup`)) {
     const content = fs.readFileSync(`/proc/1/cgroup`, 'utf-8')

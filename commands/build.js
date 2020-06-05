@@ -21,7 +21,7 @@ const modifyConfig = (config, fn) => {
 }
 
 module.exports = (api, options) => {
-  options.baseUrl = options.publicPath
+  const pagesConfig = options.pluginOptions.pages
   api.registerCommand('build', {
     description: 'build for production',
     usage: 'vue-cli-service build [options] [entry|pattern]',
@@ -153,13 +153,14 @@ async function build (args, api, options) {
       // app: api.resolve(entry)
       app: modulePath + '/main.js' // 2，修改entry入口
     }
-    webpackConfig.output.publicPath = '/' + args.entry + '/'
-    webpackConfig.output.path = targetDir
     for(let item of webpackConfig.plugins) {
       if (item.options && item.options.template) item.options.template= modulePath + '/index.html'  // 3，修改webpackConfig.plugins.HtmlWebpackPlugin template 入口
     }
   }
-
+  // publicPath 配置
+  const publicPath = pagesConfig[entry] ? pagesConfig[entry].publicPath : options.publicPath
+  webpackConfig.output.publicPath = publicPath
+  webpackConfig.output.path = targetDir
   // apply inline dest path after user configureWebpack hooks
   // so it takes higher priority
   if (args.dest) {
@@ -174,17 +175,6 @@ async function build (args, api, options) {
     })
   }
 
-  // Expose advanced stats
-  if (args.dashboard) {
-    const DashboardPlugin = require('../../webpack/DashboardPlugin')
-    modifyConfig(webpackConfig, config => {
-      config.plugins.push(new DashboardPlugin({
-        type: 'build',
-        modernBuild: args.modernBuild,
-        keepAlive: args.keepAlive
-      }))
-    })
-  }
 
   if (args.report || args['report-json']) {
     const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
