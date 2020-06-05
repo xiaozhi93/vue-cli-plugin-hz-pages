@@ -21,7 +21,6 @@ const modifyConfig = (config, fn) => {
 }
 
 module.exports = (api, options) => {
-  const pagesConfig = options.pluginOptions.pages
   api.registerCommand('build', {
     description: 'build for production',
     usage: 'vue-cli-service build [options] [entry|pattern]',
@@ -108,6 +107,7 @@ async function build (args, api, options) {
   } = require('@vue/cli-shared-utils')
 
   log()
+  const pagesConfig = options.pluginOptions.pages
   const mode = api.service.mode
   if (args.target === 'app') {
     const bundleTag = args.modern
