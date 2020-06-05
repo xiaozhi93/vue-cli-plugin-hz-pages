@@ -1,6 +1,6 @@
 {
   "name": "vue-cli-plugin-hz-pages",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "依托vue-cli3的多页面脚手架插件",
   "main": "index.js",
   "scripts": {
